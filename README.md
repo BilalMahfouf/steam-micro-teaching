@@ -1,4 +1,4 @@
-# steam-micro-teaching
+# stem-micro-teaching
 
 Interactive micro-teaching slides for a beginner JavaScript session focused on input, output, variables, and basic math.
 
