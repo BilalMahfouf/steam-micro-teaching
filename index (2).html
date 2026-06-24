@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JavaScript Basics — Printing & Math</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─── Reset ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+/* ─── Tokens (light) ─────────────────────────────────────────────── */
+:root {
+  --ink:        #1a1917;
+  --ink2:       #3d3b37;
+  --muted:      #888680;
+  --faint:      #b8b5af;
+  --rule:       #e4e1db;
+  --surface:    #f7f5f1;
+  --bg:         #ffffff;
+  --accent:     #c4773a;
+  --accent-pale:#f4ece2;
+  --good:       #2f8f66;
+  --good-pale:  #e4f5ee;
+
+  /* code editor */
+  --code-bg:    #1e1c19;
+  --code-text:  #e8e4dc;
+  --kw:         #d4a96a;
+  --str:        #8fbf8a;
+  --num:        #d4a96a;
+  --fn:         #89a8d0;
+  --cmt:        #5a5650;
+  --op:         #c4c0b8;
+
+  --radius:     6px;
+  --font-serif: 'DM Serif Display', serif;
+  --font-sans:  'DM Sans', sans-serif;
+  --font-mono:  'JetBrains Mono', monospace;
+}
+
+/* ─── Dark theme ─────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --ink:        #f0ede8;
+  --ink2:       #c8c5be;
+  --muted:      #888680;
+  --faint:      #555250;
+  --rule:       #2e2c28;
+  --surface:    #1e1c19;
+  --bg:         #0f0e0c;
+  --accent:     #c4773a;
+  --accent-pale:#2a1f12;
+  --good:       #58c195;
+  --good-pale:  #0e261b;
+  --code-bg:    #141210;
+  --code-text:  #e8e4dc;
+  --cmt:        #4a4640;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────── */
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--ink);
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ─── App shell ──────────────────────────────────────────────────── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ─── Top bar ────────────────────────────────────────────────────── */
+#topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 48px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--bg);
+  flex-shrink: 0;
+  transition: background 0.3s, border-color 0.3s;
+}
+#topbar-left {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+#topbar-right { display: flex; align-items: center; gap: 8px; }
+
+/* ─── Theme toggle ───────────────────────────────────────────────── */
+#theme-btn {
+  width: 32px; height: 32px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem;
+  transition: background 0.2s, border-color 0.2s;
+}
+#theme-btn:hover { background: var(--surface); }
+
+/* ─── Progress bar ───────────────────────────────────────────────── */
+#progress-track {
+  height: 1px;
+  background: var(--rule);
+  flex-shrink: 0;
+  position: relative;
+}
+#progress-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+/* ─── Slide viewport ─────────────────────────────────────────────── */
+#viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ─── Slides ─────────────────────────────────────────────────────── */
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 52px;
+  opacity: 0;
+  transform: translateX(32px);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+  pointer-events: none;
+  overflow-y: auto;
+}
+.slide.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+.slide.exit { opacity: 0; transform: translateX(-32px); }
+
+.slide-inner {
+  width: 100%;
+  max-width: 860px;
+}
+
+/* ─── Eyebrow ────────────────────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 16px;
+  display: block;
+}
+
+/* ─── Headings ───────────────────────────────────────────────────── */
+.h-display {
+  font-family: var(--font-serif);
+  font-size: clamp(2.4rem, 4.5vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin-bottom: 18px;
+}
+.h-display em { font-style: italic; color: var(--accent); }
+
+.h-section {
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 2.8vw, 2.6rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.h-section em { font-style: italic; color: var(--accent); }
+
+/* ─── Body text ──────────────────────────────────────────────────── */
+.body-p {
+  font-size: 0.94rem;
+  font-weight: 300;
+  line-height: 1.8;
+  color: var(--ink2);
+  margin-bottom: 18px;
+}
+.body-p strong { font-weight: 600; color: var(--ink); }
+.body-p code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--accent-pale);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+/* ─── Inline mono tag ────────────────────────────────────────────── */
+.mono-tag {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--accent-pale);
+  color: var(--accent);
+  padding: 1px 7px;
+  border-radius: 3px;
+}
+
+/* ─── Hairline rule ──────────────────────────────────────────────── */
+.rule { border: none; border-top: 1px solid var(--rule); margin: 20px 0; }
+
+/* ─── Pill badges ────────────────────────────────────────────────── */
+.badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.badge {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  color: var(--muted);
+  background: var(--surface);
+}
+.badge.accent { border-color: var(--accent); color: var(--accent); background: var(--accent-pale); }
+.badge.good   { border-color: var(--good);   color: var(--good);   background: var(--good-pale); }
+
+/* ─── Goals list ─────────────────────────────────────────────────── */
+.goals { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
+.goals li {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  font-size: 0.94rem;
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--ink2);
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.goals li:last-child { border-bottom: none; padding-bottom: 0; }
+.goals li .n {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  background: var(--accent-pale);
+  border-radius: 3px;
+  padding: 3px 7px;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+/* ─── Code block ─────────────────────────────────────────────────── */
+.code-wrap {
+  background: var(--code-bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 16px 0;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+.code-chrome {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+}
+.dot { width: 9px; height: 9px; border-radius: 50%; }
+.dot-r { background: #ff5f57; }
+.dot-y { background: #ffbd2e; }
+.dot-g { background: #27c840; }
+.code-file {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.22);
+  margin-left: 6px;
+}
+.code-body {
+  padding: 16px 18px;
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  line-height: 1.75;
+  color: var(--code-text);
+  white-space: pre;
+  overflow-x: auto;
+}
+/* tokens */
+.kw  { color: var(--kw); }
+.str { color: var(--str); }
+.num { color: var(--num); }
+.fn  { color: var(--fn); }
+.cmt { color: var(--cmt); font-style: italic; }
+.op  { color: var(--op); }
+
+/* ─── Console output ─────────────────────────────────────────────── */
+.console-out {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--good);
+  margin: 6px 0 16px;
+  transition: background 0.3s, border-color 0.3s;
+}
+.console-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 8px;
+}
+.console-line::before { content: '▸ '; color: var(--faint); }
+
+/* ─── Info cards ─────────────────────────────────────────────────── */
+.card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+.card {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  background: var(--surface);
+  transition: background 0.3s, border-color 0.3s;
+}
+.card-title {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.card-body {
+  font-size: 0.84rem;
+  font-weight: 300;
+  line-height: 1.65;
+  color: var(--ink2);
+}
+.card-body code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--accent-pale);
+  color: var(--accent);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ─── Callout box ────────────────────────────────────────────────── */
+.callout {
+  border-left: 2px solid var(--accent);
+  background: var(--accent-pale);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 14px 18px;
+  margin: 14px 0;
+}
+.callout-label {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.callout-body {
+  font-size: 0.88rem;
+  font-weight: 300;
+  line-height: 1.65;
+  color: var(--ink2);
+}
+.callout-body code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ─── Reveal button ──────────────────────────────────────────────── */
+.reveal-btn {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 8px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+.reveal-btn:hover { background: var(--accent); color: var(--bg); }
+.reveal-btn.done  { background: var(--good); border-color: var(--good); color: #fff; cursor: default; }
+.revealed { display: none; }
+.revealed.show { display: block; animation: fadein 0.25s ease; }
+@keyframes fadein { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+/* ─── Operator table ─────────────────────────────────────────────── */
+.op-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.88rem; }
+.op-table th {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  font-weight: 500;
+}
+.op-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink2);
+  font-weight: 300;
+  line-height: 1.5;
+}
+.op-table td:first-child {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent);
+  width: 48px;
+  text-align: center;
+}
+.op-table tr:last-child td { border-bottom: none; }
+.op-table td code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  color: var(--fn);
+}
+
+/* ─── Shuffle lines ──────────────────────────────────────────────── */
+.shuffle-list { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+.shuffle-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  transition: background 0.2s, border-color 0.2s;
+}
+.shuffle-item .lbl {
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--faint);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+
+/* ─── Problem cards ──────────────────────────────────────────────── */
+.problem-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.problem-card {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+.problem-card:hover { border-color: var(--accent); transform: translateX(3px); }
+.problem-card.selected { border-color: var(--accent); background: var(--accent-pale); }
+.problem-card .p-num {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-transform: uppercase;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.problem-card .p-content {}
+.problem-card .p-title {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.problem-card .p-desc {
+  font-size: 0.82rem;
+  font-weight: 300;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.problem-card .p-hint {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+  margin-top: 6px;
+}
+
+/* ─── Recap grid ─────────────────────────────────────────────────── */
+.recap-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 18px 0; }
+.recap-card {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 20px 18px;
+  background: var(--surface);
+  transition: background 0.3s, border-color 0.3s;
+}
+.recap-card .rc-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.recap-card .rc-title {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.recap-card .rc-body {
+  font-size: 0.8rem;
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* ─── Big question ───────────────────────────────────────────────── */
+.question-frame {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 32px 36px;
+  text-align: center;
+  margin: 20px 0;
+  background: var(--surface);
+  transition: background 0.3s, border-color 0.3s;
+}
+.question-mark {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 2.8rem;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 14px;
+}
+.question-text {
+  font-family: var(--font-serif);
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  line-height: 1.4;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 16px; }
+.chip {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  padding: 5px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  color: var(--muted);
+  background: var(--bg);
+}
+
+/* ─── Final line ─────────────────────────────────────────────────── */
+.final-cta {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+.final-cta p {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  color: var(--ink2);
+  line-height: 1.4;
+}
+.final-cta em { font-style: italic; color: var(--accent); }
+
+/* ─── Bottom nav ─────────────────────────────────────────────────── */
+#slide-nav {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 40px;
+  padding: 6px 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+  z-index: 200;
+  transition: background 0.3s, border-color 0.3s;
+}
+.nav-btn {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--rule);
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.nav-btn:hover:not(:disabled) { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.nav-btn:disabled { opacity: 0.28; cursor: default; }
+#slide-counter {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  color: var(--faint);
+  min-width: 36px;
+  text-align: center;
+}
+#key-hint {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+  border-left: 1px solid var(--rule);
+  padding-left: 10px;
+}
+
+/* ─── Two column ─────────────────────────────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 680px) {
+  .slide { padding: 20px 18px; }
+  .card-row, .two-col, .recap-grid { grid-template-columns: 1fr; }
+  .h-display { font-size: 2rem; }
+  .h-section { font-size: 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Top bar -->
+  <div id="topbar">
+    <span id="topbar-left">JavaScript Basics &nbsp;/&nbsp; Session 01</span>
+    <div id="topbar-right">
+      <button id="theme-btn" title="Toggle theme">☀</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div id="progress-track"><div id="progress-fill"></div></div>
+
+  <!-- Viewport -->
+  <div id="viewport">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SLIDE 1 — Title
+         TEACHER NOTE: Welcome students. Ask them to open DevTools (F12)
+         and click the Console tab — they'll use it throughout.
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="slide active" id="s0">
+      <div class="slide-inner">
+        <span class="eyebrow">Session 01 &nbsp;·&nbsp; Beginner</span>
+        <h1 class="h-display">JavaScript Basics:<br><em>Printing & Math</em></h1>
+        <hr class="rule">
+        <ul class="goals">
+          <li>
+            <span class="n">01</span>
+            Print values to the console using <span class="mono-tag">console.log()</span>
+          </li>
+          <li>
+            <span class="n">02</span>
+            Create and update variables with <span class="mono-tag">let</span>
+          </li>
+          <li>
+            <span class="n">03</span>
+            Perform calculations with arithmetic operators &nbsp;<span class="mono-tag">+ - * / %</span>
+          </li>
+        </ul>
+        <div class="badges">
+          <span class="badge accent">⏱ 30–40 min</span>
+          <span class="badge good">💻 Hands-on</span>
+          <span class="badge">🔰 No prior JS needed</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SLIDE 2 — Warm-up
+         TEACHER NOTE: Give 60 seconds to think. Accept all answers.
+         Bridge: "In JavaScript, developers use the browser console."
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="slide" id="s1">
+      <div class="slide-inner">
+        <span class="eyebrow">Warm-up &nbsp;·&nbsp; Think first</span>
+        <h2 class="h-section">Before we start</h2>
+        <div class="question-frame">
+          <div class="question-mark">"</div>
+          <div class="question-text">How does a program show information to a user?</div>
+          <p style="font-size:0.82rem;font-weight:300;color:var(--muted)">Think about websites, apps, or programs you have used.</p>
+          <div class="chips">
+            <span class="chip">Alert box</span>
+            <span class="chip">Text on screen</span>
+            <span class="chip">Console message</span>
+            <span class="chip">Notification</span>
+            <span class="chip">Your idea?</span>
+          </div>
+        </div>
+        <p class="body-p">In JavaScript, developers use the <strong>browser console</strong> to see output while building. Open it now with <span class="mono-tag">F12 → Console</span>.</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SLIDE 3 — console.log
+         TEACHER NOTE: Type live in the console: console.log("Hello World")
+         Let students try. Show that numbers don't need quotes.
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="slide" id="s2">
+      <div class="slide-inner">
+        <span class="eyebrow">Concept 01</span>
+        <h2 class="h-section"><em>console.log()</em></h2>
+        <p class="body-p"><strong>console.log()</strong> is JavaScript's way to print a value. It sends output to the developer console so you can see what your code is doing.</p>
+
+        <div class="code-wrap">
+          <div class="code-chrome"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span><span class="code-file">script.js</span></div>
+          <div class="code-body"><span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"Hello World"</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="num">5</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"I am learning JavaScript"</span>);</div>
+        </div>
+
+        <div class="console-out">
+          <div class="console-label">Console output</div>
+          <div class="console-line">Hello World</div>
+          <div class="console-line">5</div>
+          <div class="console-line">I am learning JavaScript</div>
+        </div>
+
+        <div class="card-row">
+          <div class="card">
+            <div class="card-title">Text values — strings</div>
+            <div class="card-body">Text goes inside <strong>quotes</strong>.<br><code>"Hello World"</code> &nbsp;or&nbsp; <code>'Hello World'</code></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Number values</div>
+            <div class="card-body">Numbers go in <strong>directly</strong> — no quotes needed.<br><code>5</code>&nbsp; <code>3.14</code>&nbsp; <code>100</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SLIDE 4 — Variables with let
+         TEACHER NOTE: Analogy — a variable is a labeled box.
+         You put a value in, give it a name, use the name later.
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="slide" id="s3">
+      <div class="slide-inner">
+        <span class="eyebrow">Concept 02</span>
+        <h2 class="h-section">Variables with <em>let</em></h2>
+        <p class="body-p">A <strong>variable</strong> is a named container that holds a value. Instead of repeating the same value everywhere, you give it a name and use that name.</p>
+
+        <div class="code-wrap">
+          <div class="code-chrome"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span><span class="code-file">script.js</span></div>
+          <div class="code-body"><span class="kw">let</span> name <span class="op">=</span> <span class="str">"Bilal"</span>;
+<span class="kw">let</span> age  <span class="op">=</span> <span class="num">20</span>;
+
+<span class="fn">console</span>.<span class="fn">log</span>(name);  <span class="cmt">// Bilal</span>
+<span class="fn">console</span>.<span class="fn">log</span>(age);   <span class="cmt">// 20</span></div>
+        </div>
+
+        <div class="card-row">
+          <div class="card">
+            <div class="card-title">Keyword — <code style="font-family:var(--font-mono);color:var(--kw)">let</code></div>
+            <div class="card-body">Tells JavaScript: create a new variable. Write it only <strong>once</strong> — when you first declare the variable.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Naming convention</div>
+            <div class="card-body">Use descriptive names in <strong>camelCase</strong> for multi-word names:<br><code>firstName</code>&nbsp; <code>totalScore</code>&nbsp; <code>itemPrice</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SLIDE 5 — Changing variables
+         TEACHER NOTE: Key insight — "variable" means it CAN vary.
+         Ask the class: "what will the second log print?"
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="slide" id="s4">
+      <div class="slide-inner">
+        <span class="eyebrow">Concept 02 — continued</span>
+        <h2 class="h-section">Variables <em>can change</em></h2>
+        <p class="body-p">A variable can be updated after it is created. You do not write <code>let</code> again — just use the variable name by itself.</p>
+
+        <div class="code-wrap">
+          <div class="code-chrome"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span><span class="code-file">script.js</span></div>
+          <div class="code-body"><span class="kw">let</span> score <span class="op">=</span> <span class="num">10</span>;
+<span class="fn">console</span>.<span class="fn">log</span>(score);  <span class="cmt">// 10</span>
+
+score <span class="op">=</span> <span class="num">15</span>;           <span class="cmt">// update — no "let" here</span>
+<span class="fn">console</span>.<span class="fn">log</span>(score);  <span class="cmt">// 15</span></div>
+        </div>
+
+        <div class="callout">
+          <div class="callout-label">⚡ Quick question</div>
+          <div class="callout-body">Why don't we write <code>let score = 15;</code> on the second assignment?</div>
+        </div>
+
+        <button class="reveal-btn" onclick="reveal(this,'a-change')">Show answer</button>
+        <div class="revealed" id="a-change">
+          <div class="card" style="margin-top:10px">
+            <div class="card-body">Because <code>let</code> <strong>creates</strong> a variable. The box already exists — we are just putting a new value inside it. Writing <code>let</code> again would cause an error: "already been declared".</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SLIDE 6 — Arithmetic operators
+         TEACHER NOTE: Walk through each row.
+         Special attention to % — it returns the REMAINDER.
+         Demo: 10 % 3 = 1 (because 10 = 3×3 + 1)
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="slide" id="s5">
+      <div class="slide-inner">
+        <span class="eyebrow">Concept 03</span>
+        <h2 class="h-section">Arithmetic <em>Operators</em></h2>
+
+        <table class="op-table">
+          <thead>
+            <tr><th>Symbol</th><th>Name</th><th>Example</th><th>Result</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>+</td><td>Addition</td><td><code>10 + 3</code></td><td>13</td></tr>
+            <tr><td>−</td><td>Subtraction</td><td><code>10 - 3</code></td><td>7</td></tr>
+            <tr><td>*</td><td>Multiplication</td><td><code>10 * 3</code></td><td>30</td></tr>
+            <tr><td>/</td><td>Division</td><td><code>10 / 3</code></td><td>3.333…</td></tr>
+            <tr><td>%</td><td>Remainder</td><td><code>10 % 3</code></td><td>1</td></tr>
+          </tbody>
+        </table>
+
+        <div class="code-wrap">
+          <div class="code-chrome"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span><span class="code-file">script.js</span></div>
+          <div class="code-body"><span class="kw">let</span> a <span class="op">=</span> <span class="num">10</span>;
+<span class="kw">let</span> b <span class="op">=</span> <span class="num">3</span>;
+
+<span class="fn">console</span>.<span class="fn">log</span>(a <span class="op">+</span> b);  <span class="cmt">// 13</span>
+<span class="fn">console</span>.<span class="fn">log</span>(a <span class="op">%</span> b);  <span class="cmt">// 1  ← remainder of 10 ÷ 3</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SLIDE 7 — Mini game: reverse the output
+         TEACHER NOTE: Give 2–3 minutes. Let them try in the console.
+         Don't rush to reveal — wait for attempts.
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="slide" id="s6">
+      <div class="slide-inner">
+        <span class="eyebrow">Mini game 01 &nbsp;·&nbsp; Reverse the output</span>
+        <h2 class="h-section">Write the code that <em>produces this</em></h2>
+        <p class="body-p">You see the console output below. Write the JavaScript code that produces it. Use variables <span class="mono-tag">x</span> and <span class="mono-tag">y</span>.</p>
+
+        <div class="console-out">
+          <div class="console-label">Target output</div>
+          <div class="console-line">15</div>
+          <div class="console-line">50</div>
+        </div>
+
+        <div class="callout">
+          <div class="callout-label">🧩 Hint</div>
+          <div class="callout-body">Which two operators give you <code>15</code> and <code>50</code> from the same two numbers?</div>
+        </div>
+
+        <button class="reveal-btn" onclick="reveal(this,'a-game')">Reveal answer</button>
+        <div class="revealed" id="a-game">
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-chrome"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span><span class="code-file">solution.js</span></div>
+            <div class="code-body"><span class="kw">let</span> x <span class="op">=</span> <span class="num">10</span>;
+<span class="kw">let</span> y <span class="op">=</span> <span class="num">5</span>;
+
+<span class="fn">console</span>.<span class="fn">log</span>(x <span class="op">+</span> y);  <span class="cmt">// 15</span>
+<span class="fn">console</span>.<span class="fn">log</span>(x <span class="op">*</span> y);  <span class="cmt">// 50</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SLIDE 8 — Code ordering game
+         TEACHER NOTE: Ask students to call out the correct order by letter.
+         Correct: B → C → D → A
+         Key lesson: you must declare before you use.
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="slide" id="s7">
+      <div class="slide-inner">
+        <span class="eyebrow">Mini game 02 &nbsp;·&nbsp; Fix the order</span>
+        <h2 class="h-section">Arrange the lines <em>correctly</em></h2>
+        <p class="body-p">These four lines are shuffled. What is the correct order so the code runs without errors?</p>
+
+        <div class="shuffle-list">
+          <div class="shuffle-item"><span class="lbl">A</span><span><span class="fn">console</span>.<span class="fn">log</span>(total);</span></div>
+          <div class="shuffle-item"><span class="lbl">B</span><span><span class="kw">let</span> price <span class="op">=</span> <span class="num">10</span>;</span></div>
+          <div class="shuffle-item"><span class="lbl">C</span><span><span class="kw">let</span> quantity <span class="op">=</span> <span class="num">3</span>;</span></div>
+          <div class="shuffle-item"><span class="lbl">D</span><span><span class="kw">let</span> total <span class="op">=</span> price <span class="op">*</span> quantity;</span></div>
+        </div>
+
+        <button class="reveal-btn" onclick="reveal(this,'a-order')">Reveal correct order</button>
+        <div class="revealed" id="a-order">
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-chrome"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span><span class="code-file">correct — B → C → D → A</span></div>
+            <div class="code-body"><span class="kw">let</span> price    <span class="op">=</span> <span class="num">10</span>;
+<span class="kw">let</span> quantity <span class="op">=</span> <span class="num">3</span>;
+<span class="kw">let</span> total    <span class="op">=</span> price <span class="op">*</span> quantity;
+
+<span class="fn">console</span>.<span class="fn">log</span>(total);  <span class="cmt">// 30</span></div>
+          </div>
+          <div class="card" style="margin-top:10px">
+            <div class="card-body">JavaScript reads code <strong>top to bottom</strong>. You must <strong>declare</strong> a variable before you can use it.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SLIDE 9 — Practice problems
+         TEACHER NOTE: Let students choose. Give 8–10 minutes.
+         Circulate. Ask guiding questions — don't solve for them.
+         After: ask 1–2 students to share their code.
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="slide" id="s8">
+      <div class="slide-inner">
+        <span class="eyebrow">Practice time &nbsp;·&nbsp; 8–10 minutes</span>
+        <h2 class="h-section">Pick your <em>challenge</em></h2>
+        <p class="body-p">Choose one problem and write the JavaScript code yourself. Use <span class="mono-tag">let</span>, arithmetic operators, and <span class="mono-tag">console.log()</span>.</p>
+
+        <div class="problem-grid">
+          <div class="problem-card" onclick="pick(this)">
+            <span class="p-num">01</span>
+            <div class="p-content">
+              <div class="p-title">Employee Bonus</div>
+              <div class="p-desc">An employee earns a base salary and receives a bonus. Calculate and print the final salary after adding the bonus.</div>
+              <div class="p-hint">salary + bonus</div>
+            </div>
+          </div>
+          <div class="problem-card" onclick="pick(this)">
+            <span class="p-num">02</span>
+            <div class="p-content">
+              <div class="p-title">Shopping Total</div>
+              <div class="p-desc">You are buying multiple items. Each has a unit price and a quantity. Calculate and print the total cost.</div>
+              <div class="p-hint">price × quantity</div>
+            </div>
+          </div>
+          <div class="problem-card" onclick="pick(this)">
+            <span class="p-num">03</span>
+            <div class="p-content">
+              <div class="p-title">Student Average</div>
+              <div class="p-desc">A student has three test scores. Calculate and print their average grade.</div>
+              <div class="p-hint">(score1 + score2 + score3) / 3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SLIDE 10 — Recap
+         TEACHER NOTE: Ask students to say one thing they learned.
+         Exit ticket idea: "write one line of JS from memory".
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="slide" id="s9">
+      <div class="slide-inner">
+        <span class="eyebrow">Recap &nbsp;·&nbsp; Session 01</span>
+        <h2 class="h-section">What you learned <em>today</em></h2>
+
+        <div class="recap-grid">
+          <div class="recap-card">
+            <div class="rc-eyebrow">01 &nbsp;·&nbsp; Output</div>
+            <div class="rc-title">console.log()</div>
+            <div class="rc-body">Prints any value — text or number — to the browser console.</div>
+          </div>
+          <div class="recap-card">
+            <div class="rc-eyebrow">02 &nbsp;·&nbsp; Storage</div>
+            <div class="rc-title">let</div>
+            <div class="rc-body">Creates a variable to store a value. Variables can be updated any time.</div>
+          </div>
+          <div class="recap-card">
+            <div class="rc-eyebrow">03 &nbsp;·&nbsp; Calculation</div>
+            <div class="rc-title">+ &minus; * / %</div>
+            <div class="rc-body">Arithmetic operators to add, subtract, multiply, divide, and find remainders.</div>
+          </div>
+        </div>
+
+        <div class="code-wrap">
+          <div class="code-chrome"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span><span class="code-file">putting it all together</span></div>
+          <div class="code-body"><span class="kw">let</span> salary <span class="op">=</span> <span class="num">3000</span>;
+<span class="kw">let</span> bonus  <span class="op">=</span> <span class="num">500</span>;
+<span class="kw">let</span> total  <span class="op">=</span> salary <span class="op">+</span> bonus;
+
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"Final salary:"</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(total);  <span class="cmt">// 3500</span></div>
+        </div>
+
+        <div class="final-cta">
+          <p>Now you can make <em>JavaScript do simple calculations.</em></p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /viewport -->
+</div><!-- /app -->
+
+<!-- Bottom nav -->
+<div id="slide-nav">
+  <button class="nav-btn" id="prev-btn" disabled>← prev</button>
+  <span id="slide-counter">1 / 10</span>
+  <button class="nav-btn" id="next-btn">next →</button>
+  <span id="key-hint">space / arrows</span>
+</div>
+
+<script>
+  const TOTAL   = 10;
+  let current   = 0;
+
+  const slides  = document.querySelectorAll('.slide');
+  const counter = document.getElementById('slide-counter');
+  const fill    = document.getElementById('progress-fill');
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+
+  function goTo(n) {
+    if (n < 0 || n >= TOTAL) return;
+    const prev = current;
+    current = n;
+    slides[prev].classList.remove('active');
+    slides[prev].classList.add('exit');
+    slides[current].classList.remove('exit');
+    slides[current].classList.add('active');
+    setTimeout(() => slides[prev].classList.remove('exit'), 320);
+    updateUI();
+  }
+
+  function updateUI() {
+    counter.textContent   = `${current + 1} / ${TOTAL}`;
+    fill.style.width      = `${((current + 1) / TOTAL) * 100}%`;
+    prevBtn.disabled      = current === 0;
+    nextBtn.disabled      = current === TOTAL - 1;
+  }
+
+  prevBtn.addEventListener('click', () => goTo(current - 1));
+  nextBtn.addEventListener('click', () => goTo(current + 1));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft')                   { e.preventDefault(); goTo(current - 1); }
+  });
+
+  // Reveal
+  function reveal(btn, id) {
+    document.getElementById(id).classList.add('show');
+    btn.textContent = '✓ Answer shown';
+    btn.classList.add('done');
+    btn.disabled = true;
+  }
+
+  // Problem picker
+  function pick(card) {
+    document.querySelectorAll('.problem-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+  }
+
+  // Theme toggle
+  const themeBtn = document.getElementById('theme-btn');
+  let dark = false;
+  themeBtn.addEventListener('click', () => {
+    dark = !dark;
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : '');
+    themeBtn.textContent = dark ? '☾' : '☀';
+  });
+
+  updateUI();
+</script>
+</body>
+</html>
